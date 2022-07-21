@@ -1,0 +1,33 @@
+---
+title: "Classification Machine Learning Models"
+author: "Michael Albers"
+date: '2022-07-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+- Run a kernelized SVM model on data set
+- Implement two other classification models on same data set
+- Compare and constrast results of each classification model
+
+
+## Data Set
+
+Lyft Bikes and Scooters, LLC (“Bikeshare”) operates the City of Chicago’s (“City”) Divvy bicycle sharing service (https://divvybikes.com). Bikeshare and the City are committed to supporting bicycling as an alternative transportation option. As part of that commitment, the City permits Bikeshare to make certain Divvy system data owned by the City (“Data”) available to the public. 
+
+License Agreement: https://ride.divvybikes.com/data-license-agreement
+
+Download link: https://divvy-tripdata.s3.amazonaws.com/index.html
+
+
+## Read and Inspect data set
+
+```{r}
+
+```
+
