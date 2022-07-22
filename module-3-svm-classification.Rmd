@@ -9,11 +9,30 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Libraries
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(janitor)
+library(skimr)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(lubridate)
+
+```
+
+
+
+
 ## Overview
 
-- Run a kernelized SVM model on data set
+- Run a kernelized SVM model on a bike sharing data set
 - Implement two other classification models on same data set
-- Compare and constrast results of each classification model
+- Compare and contrast results of each classification model
 
 
 ## Data Set
@@ -27,7 +46,87 @@ Download link: https://divvy-tripdata.s3.amazonaws.com/index.html
 
 ## Read and Inspect data set
 
-```{r}
+The bike sharing data file for the month of May in 2021 will be the data source.  The dependent variable for the classification models is the member_casual column.  The classification models will try and predict whether a bike customer is member or a casual bike rider.
 
+
+```{r read in divvy data (dd)}
+dd <- read.csv('data/202105-divvy-tripdata.csv')
+```
+
+```{r}
+glimpse(dd)
+```
+
+```{r}
+dd$started_at <- ymd_hms(dd$started_at)
+```
+
+```{r}
+dd$ended_at <- ymd_hms(dd$ended_at)
+```
+
+
+```{r}
+dd$member_casual <- as.factor(dd$member_casual)
+```
+
+
+```{r}
+glimpse(dd)
+```
+
+
+
+```{r}
+summary(dd)
+```
+
+```{r}
+dd %>% 
+  tabyl(rideable_type, member_casual) %>% 
+  adorn_totals("col")
+```
+
+The label column is member_casual which has two possible values (member or casual).  The number of casual and member riders is about the same.
+
+
+## Pre processing of data set
+
+### One-hot encode the rideable_type column
+
+
+### Create new features
+
+  1. Week day number: Day of week that the person took a bike trip
+  2. Start hour: The hour of the day that the person started on bike trip
+  3. End hour: The hour of the day that the person ended his/her bike trip
+  4. Trip duration: Duration of bike trip in minutes, calculated as ended_at minus started_at
+  
+
+
+```{r Day of week number}
+dd$weekday_num <- wday(dd$started_at)
+```
+
+
+```{r}
+glimpse(dd)
+```
+
+```{r Start Hour of Bike trip}
+
+```
+
+```{r End Hour of Bike trip}
+
+```
+
+
+```{r Bike trip duration}
+dd$trip_duration <- as.numeric(difftime(dd$ended_at, dd$started_at, units = "mins"))
+```
+
+```{r}
+glimpse(dd)
 ```
 
