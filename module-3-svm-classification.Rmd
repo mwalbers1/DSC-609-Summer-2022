@@ -23,9 +23,7 @@ library(lubridate)
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(caret)
-
 ```
-
 
 
 
@@ -58,43 +56,70 @@ dd <- read.csv('data/202105-divvy-tripdata.csv')
 glimpse(dd)
 ```
 
+### Filter on the busiest starting bike station
+
+Since there are over 530,000 trips for the month of May 2021, the classification models will be limited to the busiest starting bike station for May of 2021
+
 ```{r}
-dd$rideable_type <- factor(dd$rideable_type, levels = c("classic_bike", "docked_bike", "electric_bike"))
+starting_and_end_stations <- dd %>% 
+  filter(start_station_name != "" & end_station_name != "")
+```
+
+```{r}
+starting_and_end_stations %>% 
+  group_by(start_station_id, start_station_name) %>% 
+  summarize(number_trips = n()) %>% 
+  arrange(desc(number_trips))
+```
+
+```{r}
+streeter_station.df <- starting_and_end_stations %>% 
+  filter(start_station_id == 13022)
+```
+
+```{r}
+glimpse(streeter_station.df)
+```
+
+
+
+```{r}
+streeter_station.df$rideable_type <- factor(streeter_station.df$rideable_type, levels = c("classic_bike", "docked_bike", "electric_bike"))
 ```
 
 
 ```{r}
-dd$started_at <- ymd_hms(dd$started_at)
+streeter_station.df$started_at <- ymd_hms(streeter_station.df$started_at)
 ```
 
 
 ```{r}
-dd$ended_at <- ymd_hms(dd$ended_at)
+streeter_station.df$ended_at <- ymd_hms(streeter_station.df$ended_at)
 ```
 
 
 ```{r}
-dd$member_casual <- as.factor(dd$member_casual)
+streeter_station.df$member_casual <- factor(streeter_station.df$member_casual, levels = c("casual", "member"))
 ```
 
 
 ```{r}
-glimpse(dd)
+glimpse(streeter_station.df)
 ```
 
 
 
 ```{r}
-summary(dd)
+summary(streeter_station.df)
 ```
 
 ```{r}
-dd %>% 
+streeter_station.df %>% 
   tabyl(rideable_type, member_casual) %>% 
   adorn_totals("col")
 ```
 
-The label column is member_casual which has two possible values (member or casual).  The number of casual and member riders is about the same.
+The label column is member_casual which has two possible values (member or casual).
 
 
 ## Pre processing of data set
@@ -102,7 +127,7 @@ The label column is member_casual which has two possible values (member or casua
 ### One-hot encode the rideable_type column
 
 ```{r}
-dummy <- dummyVars("~ rideable_type", data = dd, levelsOnly = TRUE)
+dummy <- dummyVars("~ rideable_type", data = streeter_station.df, levelsOnly = TRUE)
 ```
 
 ```{r}
@@ -111,9 +136,12 @@ dummy
 
 
 ```{r}
-dummy.df <- data.frame(predict(dummy, newdata = dd))
+dummy.df <- data.frame(predict(dummy, newdata = streeter_station.df))
 ```
 
+```{r}
+bike_trips.df <- cbind(streeter_station.df, dummy.df)
+```
 
 
 ### Create new features
@@ -126,34 +154,35 @@ dummy.df <- data.frame(predict(dummy, newdata = dd))
 
 
 ```{r Day of week number}
-dd$weekday_num <- wday(dd$started_at)
+bike_trips.df$weekday_num <- wday(bike_trips.df$started_at)
 ```
 
-
-```{r}
-glimpse(dd)
-```
 
 ```{r Starting Hour of Bike trip}
-dd$start_hour <- format(as.POSIXct(dd$started_at), format = "%H")
+bike_trips.df$start_hour <- as.numeric(format(as.POSIXct(bike_trips.df$started_at), format = "%H"))
 ```
 
 ```{r Ending Hour of Bike trip}
-dd$end_hour <- format(as.POSIXct(dd$ended_at), format = "%H")
+bike_trips.df$end_hour <- as.numeric(format(as.POSIXct(bike_trips.df$ended_at), format = "%H"))
 ```
 
 
 ```{r Bike trip duration}
-dd$trip_duration <- as.numeric(difftime(dd$ended_at, dd$started_at, units = "mins"))
+bike_trips.df$trip_duration <- as.numeric(difftime(bike_trips.df$ended_at, bike_trips.df$started_at, units = "mins"))
 ```
 
 ```{r}
-glimpse(dd)
+bike_trips.df <- subset(bike_trips.df,
+			select = -c(start_station_id, start_station_name, start_lat, start_lng ))
+```
+
+```{r}
+glimpse(bike_trips.df)
 ```
 
 ## Visualization
 
-Plot features from both classes, casual and member
+Plot features from both casual and member classes
 
 ```{r}
 
