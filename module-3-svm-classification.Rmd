@@ -18,10 +18,11 @@ library(tidyverse)
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(janitor)
 library(skimr)
+library(lubridate)
 ```
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-library(lubridate)
+library(caret)
 
 ```
 
@@ -58,8 +59,14 @@ glimpse(dd)
 ```
 
 ```{r}
+dd$rideable_type <- factor(dd$rideable_type, levels = c("classic_bike", "docked_bike", "electric_bike"))
+```
+
+
+```{r}
 dd$started_at <- ymd_hms(dd$started_at)
 ```
+
 
 ```{r}
 dd$ended_at <- ymd_hms(dd$ended_at)
@@ -94,6 +101,20 @@ The label column is member_casual which has two possible values (member or casua
 
 ### One-hot encode the rideable_type column
 
+```{r}
+dummy <- dummyVars("~ rideable_type", data = dd, levelsOnly = TRUE)
+```
+
+```{r}
+dummy
+```
+
+
+```{r}
+dummy.df <- data.frame(predict(dummy, newdata = dd))
+```
+
+
 
 ### Create new features
 
@@ -113,12 +134,12 @@ dd$weekday_num <- wday(dd$started_at)
 glimpse(dd)
 ```
 
-```{r Start Hour of Bike trip}
-
+```{r Starting Hour of Bike trip}
+dd$start_hour <- format(as.POSIXct(dd$started_at), format = "%H")
 ```
 
-```{r End Hour of Bike trip}
-
+```{r Ending Hour of Bike trip}
+dd$end_hour <- format(as.POSIXct(dd$ended_at), format = "%H")
 ```
 
 
@@ -128,5 +149,17 @@ dd$trip_duration <- as.numeric(difftime(dd$ended_at, dd$started_at, units = "min
 
 ```{r}
 glimpse(dd)
+```
+
+## Visualization
+
+Plot features from both classes, casual and member
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
