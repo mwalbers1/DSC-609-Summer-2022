@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Libraries
 
+```{r}
+library(knitr)
+```
+
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
 ```
@@ -185,7 +190,9 @@ summary(bike_trips.df)
 Plot Electric Bikes for Casual and Member classes
 
 ```{r plot electric bikes}
-electric_bikes.df <- bike_trips.df %>% filter(electric_bike == 1)
+electric_bikes.df <- bike_trips.df %>% 
+  filter(electric_bike == 1) %>% 
+  subset(select = c(end_lat, end_lng, weekday_num, trip_duration, start_hour, end_hour, member_casual))
 ```
 
 ```{r}
@@ -198,15 +205,74 @@ ggplot(data=electric_bikes.df, aes(x=end_lat, y=end_lng)) +
 ```{r}
 ggplot(data=electric_bikes.df, aes(x=weekday_num, y=trip_duration)) +
   geom_point(aes(color=member_casual)) +
-  geom_jitter(aes(color=member_casual), width = 0.30) +
+  geom_jitter(aes(color=member_casual), width = 0.35) +
   labs(title="Electric Bikes - Trip Duration v. Weekday")
 ```
 
 ```{r}
 ggplot(data=electric_bikes.df, aes(x=start_hour, y=end_hour)) +
   geom_point(aes(color=member_casual)) +
-  geom_jitter(aes(color=member_casual), width = 0.45) +
+  facet_wrap(~member_casual) +
+  geom_jitter(aes(color=member_casual), width = 2.5) +
   labs(title="Electric Bikes - Trip Starting v. Ending Hour")
+```
+
+## Training data and classes
+
+```{r}
+train_data <- electric_bikes.df[,1:6]
+```
+
+```{r}
+glimpse(train_data)
+```
+
+
+```{r}
+train_classes <- electric_bikes.df[,7]
+```
+
+```{r}
+unique(train_classes)
+```
+
+
+## Kernelized SVM
+
+```{r}
+fold <- trainControl(method = "cv", number = 5)
+```
+
+```{r}
+param_grid <- expand.grid(sigma = c(0, 0.01, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.25, 0.5, 0.75, 0.9),
+                          C = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 5))
+```
+
+```{r}
+svm.rbf.cv <- train(x=train_data, 
+                    y=train_classes,
+                    method = "svmRadial",
+                    trControl = fold,
+                    preProcess = c("center", "scale"),
+                    tuneGrid = param_grid,
+                    tuneLength = 10
+                    )
+```
+
+```{r}
+svm.rbf.cv
+```
+
+### SVM Kernel Results
+
+
+```{r}
+svm.results <- data.frame(sigma = c(0.025), C=c(2.00), Accuracy=c(0.8341463), Kappa=c(0.002854054))
+```
+
+
+```{r}
+svm.results
 ```
 
 
