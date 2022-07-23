@@ -110,10 +110,6 @@ glimpse(streeter_station.df)
 
 
 ```{r}
-summary(streeter_station.df)
-```
-
-```{r}
 streeter_station.df %>% 
   tabyl(rideable_type, member_casual) %>% 
   adorn_totals("col")
@@ -180,15 +176,37 @@ bike_trips.df <- subset(bike_trips.df,
 glimpse(bike_trips.df)
 ```
 
+```{r}
+summary(bike_trips.df)
+```
+
 ## Visualization
 
-Plot features from both casual and member classes
+Plot Electric Bikes for Casual and Member classes
 
-```{r}
-
+```{r plot electric bikes}
+electric_bikes.df <- bike_trips.df %>% filter(electric_bike == 1)
 ```
 
 ```{r}
-
+ggplot(data=electric_bikes.df, aes(x=end_lat, y=end_lng)) +
+  geom_jitter() +
+  geom_point(aes(color=member_casual)) +
+  labs(title="Electric Bikes - Destination Coordinates")
 ```
+
+```{r}
+ggplot(data=electric_bikes.df, aes(x=weekday_num, y=trip_duration)) +
+  geom_point(aes(color=member_casual)) +
+  geom_jitter(aes(color=member_casual), width = 0.30) +
+  labs(title="Electric Bikes - Trip Duration v. Weekday")
+```
+
+```{r}
+ggplot(data=electric_bikes.df, aes(x=start_hour, y=end_hour)) +
+  geom_point(aes(color=member_casual)) +
+  geom_jitter(aes(color=member_casual), width = 0.45) +
+  labs(title="Electric Bikes - Trip Starting v. Ending Hour")
+```
+
 
