@@ -11,25 +11,28 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Libraries
 
-```{r}
-library(knitr)
-```
 
-
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r tidyverse library, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
 ```
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r utility libraries, echo=FALSE, warning=FALSE, message=FALSE}
 library(janitor)
 library(skimr)
 library(lubridate)
 ```
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r caret library, echo=FALSE, warning=FALSE, message=FALSE}
 library(caret)
 ```
 
+```{r rpart library, echo=FALSE, warning=FALSE, message=FALSE}
+library(rpart)
+```
+
+```{r class library, echo=FALSE, warning=FALSE, message=FALSE}
+library(class)
+```
 
 
 ## Overview
@@ -217,36 +220,80 @@ ggplot(data=electric_bikes.df, aes(x=start_hour, y=end_hour)) +
   labs(title="Electric Bikes - Trip Starting v. Ending Hour")
 ```
 
-## Training data and classes
+
+## Set seed for reproduceability
+
 
 ```{r}
-train_data <- electric_bikes.df[,1:6]
+set.seed(42)
+```
+
+
+## Split Electric Bikes data into Training and Testing Sets
+
+### Training data
+
+
+```{r}
+train_index <- sample(1:nrow(electric_bikes.df), 0.75 * nrow(electric_bikes.df))
+```
+
+```{r}
+train_data <- electric_bikes.df[train_index, 1:6]
 ```
 
 ```{r}
 glimpse(train_data)
 ```
 
-
 ```{r}
-train_classes <- electric_bikes.df[,7]
+train_classes <- electric_bikes.df[train_index, 7]
 ```
 
 ```{r}
-unique(train_classes)
+train_classes %>% 
+  tabyl() %>% 
+  adorn_totals(c("row","col"))
 ```
 
 
-## Kernelized SVM
+### Test data
+
+
+```{r}
+test_data <- electric_bikes.df[-train_index, 1:6]
+```
+
+```{r}
+glimpse(test_data)
+```
+
+```{r}
+test_classes <- electric_bikes.df[-train_index, 7]
+```
+
+```{r}
+test_classes %>% 
+  tabyl() %>% 
+  adorn_totals(c("row","col"))
+```
+
+
+
+## Classification Models
+
+
+### Kernelized SVM
 
 ```{r}
 fold <- trainControl(method = "cv", number = 5)
 ```
 
 ```{r}
-param_grid <- expand.grid(sigma = c(0, 0.01, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.25, 0.5, 0.75, 0.9),
-                          C = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 5))
+param_grid <- expand.grid(sigma = c(0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 0.9),
+                              C = c(0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.5))
 ```
+
 
 ```{r}
 svm.rbf.cv <- train(x=train_data, 
@@ -255,24 +302,105 @@ svm.rbf.cv <- train(x=train_data,
                     trControl = fold,
                     preProcess = c("center", "scale"),
                     tuneGrid = param_grid,
-                    tuneLength = 10
+                    tuneLength = 5
                     )
 ```
 
 ```{r}
-svm.rbf.cv
+print(svm.rbf.cv)
 ```
 
-### SVM Kernel Results
+```{r}
+plot(svm.rbf.cv)
+```
+
+
+#### Predict classes using SVM Kernelized model
 
 
 ```{r}
-svm.results <- data.frame(sigma = c(0.025), C=c(2.00), Accuracy=c(0.8341463), Kappa=c(0.002854054))
+svm_pred <- predict(svm.rbf.cv, test_data)
+```
+
+```{r}
+confusionMatrix(svm_pred, test_classes, dnn = c("Prediction", "Actual"))
+```
+
+
+### Decision Tree
+
+Perform cross-validation on training data using CART decision trees
+
+```{r}
+param_grid.cart <- expand.grid(cp = c(0, 0.01, 0.02, 0.25, 0.3, 0.5, 0.75, 0.9))
 ```
 
 
 ```{r}
-svm.results
+cart.cv <- train(x=train_data, 
+                 y=train_classes,
+                 method = "rpart",
+                 trControl = fold,
+                 tuneGrid = param_grid.cart,
+                 tuneLength = 5)
 ```
+
+```{r}
+print(cart.cv)
+```
+
+```{r}
+plot(cart.cv)
+```
+
+
+#### Predict classes using Decision Tree model
+
+```{r}
+dtree_pred <- predict(cart.cv, test_data)
+```
+
+```{r}
+confusionMatrix(dtree_pred, test_classes, dnn = c("Prediction", "Actual"))
+```
+
+
+
+### k-NN (k-Nearest Neighbors)
+
+
+```{r}
+folds.knn <- createFolds(electric_bikes.df[,7], k=5)
+```
+
+```{r}
+sapply(folds.knn, length)
+```
+
+```{r}
+
+for (i in 1:5) {
+  knn.f <- folds.knn[[i]]
+  num_items.f <- length(knn.f)
+  split <- round(num_items.f * .75)
+  
+  knn.train <- electric_bikes.df[knn.f[1:split], c("end_lat","end_lng","weekday_num","trip_duration","start_hour","end_hour")]
+  knn.train.labels <- electric_bikes.df[knn.f[1:split], c("member_casual")]
+  
+  knn.test <- electric_bikes.df[knn.f[(split+1):num_items.f], 
+                                c("end_lat","end_lng","weekday_num","trip_duration","start_hour","end_hour")]
+  knn.test.labels <- electric_bikes.df[knn.f[(split+1):num_items.f], c("member_casual")]
+  
+  p <- knn(train = knn.train, test = knn.test, cl = knn.train.labels, k = 3)
+  cat(paste("fold number: ", i, "accuracy: ", mean(p == knn.test.labels)), sep = "\n\n")
+  
+  print(table(knn.test.labels, p, dnn=c("Actual", "Predicted")))
+  
+}
+```
+
+The k-NN model cross validation achieved an accuracy of 86%.  However, it successfully predicted just one member out of a total of eleven members.
+
+
 
 
