@@ -1,16 +1,13 @@
 ---
 title: "Classification Machine Learning Models"
 author: "Michael Albers"
-date: '2022-07-21'
+date: '2022-07-23'
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-## Libraries
-
 
 ```{r tidyverse library, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
@@ -38,7 +35,9 @@ library(class)
 ## Overview
 
 - Run a kernelized SVM model on a bike sharing data set
+
 - Implement two other classification models on same data set
+
 - Compare and contrast results of each classification model
 
 
@@ -53,7 +52,7 @@ Download link: https://divvy-tripdata.s3.amazonaws.com/index.html
 
 ## Read and Inspect data set
 
-The bike sharing data file for the month of May in 2021 will be the data source.  The dependent variable for the classification models is the member_casual column.  The classification models will try and predict whether a bike customer is member or a casual bike rider.
+The bike sharing data file for the month of May in 2021 will be the data source.  The dependent variable for the classification models is the member_casual column.  The classification models will try and predict whether a bike customer is a member or a casual bike rider.
 
 
 ```{r read in divvy data (dd)}
@@ -126,7 +125,7 @@ streeter_station.df %>%
 The label column is member_casual which has two possible values (member or casual).
 
 
-## Pre processing of data set
+## Pre-processing of data set
 
 ### One-hot encode the rideable_type column
 
@@ -150,10 +149,16 @@ bike_trips.df <- cbind(streeter_station.df, dummy.df)
 
 ### Create new features
 
-  1. Week day number: Day of week that the person took a bike trip
-  2. Start hour: The hour of the day that the person started on bike trip
-  3. End hour: The hour of the day that the person ended his/her bike trip
-  4. Trip duration: Duration of bike trip in minutes, calculated as ended_at minus started_at
+  1. **Week day number**: Day of week that the person took a bike trip
+  
+  
+  2. **Start hour**: The hour of the day that the person started on bike trip
+  
+  
+  3. **End hour**: The hour of the day that the person ended his/her bike trip
+  
+  
+  4. **Trip duration**: Duration of bike trip in minutes, calculated as ended_at minus started_at
   
 
 
@@ -253,7 +258,7 @@ train_classes <- electric_bikes.df[train_index, 7]
 ```{r}
 train_classes %>% 
   tabyl() %>% 
-  adorn_totals(c("row","col"))
+  adorn_totals(c("row"))
 ```
 
 
@@ -275,7 +280,7 @@ test_classes <- electric_bikes.df[-train_index, 7]
 ```{r}
 test_classes %>% 
   tabyl() %>% 
-  adorn_totals(c("row","col"))
+  adorn_totals(c("row"))
 ```
 
 
@@ -356,6 +361,7 @@ plot(cart.cv)
 
 #### Predict classes using Decision Tree model
 
+
 ```{r}
 dtree_pred <- predict(cart.cv, test_data)
 ```
@@ -399,7 +405,22 @@ for (i in 1:5) {
 }
 ```
 
-The k-NN model cross validation achieved an accuracy of 86%.  However, it successfully predicted just one member out of a total of eleven members.
+
+## Summary
+
+
+- The Kernel SVM, Decision Tree, and k-Nearest Neighbors models had similar accuracy scores of 86% 
+
+
+- All three models had low Specificity scores which is the score of predicting the negative class which was "member". This was probably due to the fact that the data set had far more casual bike riders than members
+
+
+- The k-NN model had the lowest prediction score for member bike riders
+
+
+- All three models had very high Sensitivity scores (above 95%) which was the prediction scores for casual bike riders
+
+
 
 
 
