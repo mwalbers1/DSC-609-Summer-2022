@@ -127,3 +127,28 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# datasets folder
+datasets/
+
+# large data files
+data/202105-divvy-tripdata.csv
+
+# excluded data files
+data/le_2015.csv
+
+# RStudio files
+.Rprofile
+.RData
+.Rhistory
+*.Rproj
+.Rproj.user/
+renv/
+*.renv
+renv.*
+
+.gitignore
+
+# Html assignment files
+module-*.html
+
