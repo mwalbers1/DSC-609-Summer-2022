@@ -1,7 +1,4 @@
-# DSC-609-Summer-2022
-
-## Machine Learning
-
+# Machine Learning
 
 - Underfitting, Overfitting, and Regularization strategies
 - Support Vector Machines (SVM)
